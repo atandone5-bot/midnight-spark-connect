@@ -133,10 +133,26 @@ function ProfilePage() {
               </div>
               <div className="flex-1">
                 <label className="inline-block cursor-pointer rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-card transition">
-                  {uploading ? "Uploading…" : photoUrl ? "Change photo" : "Upload photo"}
+                  {uploading ? "Reviewing…" : photoUrl ? "Change photo" : "Upload photo"}
                   <input type="file" accept="image/*" className="hidden" onChange={onPhotoChange} disabled={uploading} />
                 </label>
-                <p className="mt-2 text-xs text-muted-foreground">JPG/PNG, max 5MB. Face only — no nudity in profile pics.</p>
+                <p className="mt-2 text-xs text-muted-foreground">JPG/PNG, max 5MB. Face only — no nudity in profile pics. Auto-reviewed before going live.</p>
+                {profile?.photo_status === "approved" && (
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-success">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Approved & visible
+                  </p>
+                )}
+                {profile?.photo_status === "pending" && (
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5" /> Pending review
+                  </p>
+                )}
+                {profile?.photo_status === "rejected" && (
+                  <p className="mt-2 inline-flex items-start gap-1.5 text-xs font-semibold text-primary">
+                    <XCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                    Rejected: {profile.photo_rejection_reason || "Try a different photo."}
+                  </p>
+                )}
               </div>
             </div>
 
