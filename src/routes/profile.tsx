@@ -5,6 +5,9 @@ import { useAuth } from "@/lib/auth";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useServerFn } from "@tanstack/react-start";
+import { submitPhotoForReview } from "@/server/photos.functions";
+import { CheckCircle2, Clock, XCircle } from "lucide-react";
 
 export const Route = createFileRoute("/profile")({ component: ProfilePage });
 
@@ -36,22 +39,30 @@ function ProfilePage() {
     });
   }, [user, authLoading, nav]);
 
+  const submitPhoto = useServerFn(submitPhotoForReview);
+
   async function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !user) return;
     if (file.size > 5 * 1024 * 1024) { toast.error("Max 5MB"); return; }
     if (!file.type.startsWith("image/")) { toast.error("Image only"); return; }
     setUploading(true);
-    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
     const path = `${user.id}/avatar-${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from("photos").upload(path, file, { upsert: true, contentType: file.type });
     if (upErr) { setUploading(false); toast.error(upErr.message); return; }
-    const { data: signed } = await supabase.storage.from("photos").createSignedUrl(path, 60 * 60 * 24 * 365);
-    const url = signed?.signedUrl ?? null;
-    await supabase.from("profiles").update({ photo_url: url }).eq("id", user.id);
-    setPhotoUrl(url);
-    setUploading(false);
-    toast.success("Photo updated");
+    try {
+      const result = await submitPhoto({ data: { storagePath: path } });
+      const { data: fresh } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+      setProfile(fresh);
+      setPhotoUrl(fresh?.photo_url ?? null);
+      if (result.status === "approved") toast.success("Photo approved");
+      else toast.error(`Photo rejected — ${result.reason}`);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Moderation failed");
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -122,10 +133,26 @@ function ProfilePage() {
               </div>
               <div className="flex-1">
                 <label className="inline-block cursor-pointer rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-card transition">
-                  {uploading ? "Uploading…" : photoUrl ? "Change photo" : "Upload photo"}
+                  {uploading ? "Reviewing…" : photoUrl ? "Change photo" : "Upload photo"}
                   <input type="file" accept="image/*" className="hidden" onChange={onPhotoChange} disabled={uploading} />
                 </label>
-                <p className="mt-2 text-xs text-muted-foreground">JPG/PNG, max 5MB. Face only — no nudity in profile pics.</p>
+                <p className="mt-2 text-xs text-muted-foreground">JPG/PNG, max 5MB. Face only — no nudity in profile pics. Auto-reviewed before going live.</p>
+                {profile?.photo_status === "approved" && (
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-success">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Approved & visible
+                  </p>
+                )}
+                {profile?.photo_status === "pending" && (
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5" /> Pending review
+                  </p>
+                )}
+                {profile?.photo_status === "rejected" && (
+                  <p className="mt-2 inline-flex items-start gap-1.5 text-xs font-semibold text-primary">
+                    <XCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                    Rejected: {profile.photo_rejection_reason || "Try a different photo."}
+                  </p>
+                )}
               </div>
             </div>
 
