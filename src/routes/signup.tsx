@@ -12,6 +12,7 @@ const schema = z.object({
   email: z.string().trim().email().max(255),
   age: z.coerce.number().int().min(18, "You must be 18 or older").max(120),
   password: z.string().min(8, "At least 8 characters").max(72),
+  agree: z.literal("on", { message: "You must agree to the Terms and Privacy Policy" }),
 });
 
 function SignupPage() {
