@@ -2,7 +2,6 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
-import { InstallBanner } from "@/components/InstallBanner";
 
 function NotFoundComponent() {
   return (
@@ -31,15 +30,16 @@ export const Route = createRootRoute({
       { name: "description", content: "A premium, real-time, location-based platform for private adult meetups. Verified, discreet, exclusive." },
       { name: "theme-color", content: "#000000" },
       { property: "og:title", content: "After Dark — Private meetups, after hours" },
-      { property: "og:description", content: "Premium real-time meetups. Verified. Discreet." },
+      { property: "og:description", content: "A premium, real-time, location-based platform for private adult meetups. Verified, discreet, exclusive." },
       { property: "og:type", content: "website" },
+      { name: "twitter:title", content: "After Dark — Private meetups, after hours" },
+      { name: "twitter:description", content: "A premium, real-time, location-based platform for private adult meetups. Verified, discreet, exclusive." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b153de60-5190-4933-a8ee-cf83f7cfa480/id-preview-f0df1138--06c5c3d7-9bcd-4adb-9dea-9819084ca1e5.lovable.app-1778067528598.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b153de60-5190-4933-a8ee-cf83f7cfa480/id-preview-f0df1138--06c5c3d7-9bcd-4adb-9dea-9819084ca1e5.lovable.app-1778067528598.png" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.ico", sizes: "any" },
-      { rel: "icon", href: "/icon-192.png", type: "image/png", sizes: "192x192" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
-      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -69,7 +69,6 @@ function RootComponent() {
   return (
     <AuthProvider>
       <Outlet />
-      <InstallBanner />
       <Toaster theme="dark" />
     </AuthProvider>
   );
