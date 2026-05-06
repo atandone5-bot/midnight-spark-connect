@@ -88,6 +88,13 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
           <p className="mt-1 text-center text-sm text-muted-foreground mb-6">{subtitle}</p>
           {children}
         </div>
+        <p className="mt-6 text-center text-[11px] text-muted-foreground">
+          <Link to="/terms" className="hover:text-foreground">Terms</Link>
+          <span className="mx-2">·</span>
+          <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
+          <span className="mx-2">·</span>
+          18+ only
+        </p>
       </div>
     </div>
   );
