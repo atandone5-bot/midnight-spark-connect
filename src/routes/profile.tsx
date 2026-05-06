@@ -23,15 +23,36 @@ function ProfilePage() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
     if (!user) { nav({ to: "/login" }); return; }
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
       setProfile(data);
+      setPhotoUrl(data?.photo_url ?? null);
       setLoading(false);
     });
   }, [user, authLoading, nav]);
+
+  async function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error("Max 5MB"); return; }
+    if (!file.type.startsWith("image/")) { toast.error("Image only"); return; }
+    setUploading(true);
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("photos").upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr) { setUploading(false); toast.error(upErr.message); return; }
+    const { data: signed } = await supabase.storage.from("photos").createSignedUrl(path, 60 * 60 * 24 * 365);
+    const url = signed?.signedUrl ?? null;
+    await supabase.from("profiles").update({ photo_url: url }).eq("id", user.id);
+    setPhotoUrl(url);
+    setUploading(false);
+    toast.success("Photo updated");
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -89,6 +110,25 @@ function ProfilePage() {
           </div>
 
           <form onSubmit={onSubmit} className="space-y-5">
+            <div className="flex items-center gap-5">
+              <div className="relative h-24 w-24 rounded-2xl overflow-hidden bg-gradient-to-br from-card to-secondary border border-border flex items-center justify-center shrink-0">
+                {photoUrl ? (
+                  <img src={photoUrl} alt="Avatar" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="font-display text-3xl font-bold text-muted-foreground/50">
+                    {(profile?.nickname?.[0] ?? "?").toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1">
+                <label className="inline-block cursor-pointer rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-card transition">
+                  {uploading ? "Uploading…" : photoUrl ? "Change photo" : "Upload photo"}
+                  <input type="file" accept="image/*" className="hidden" onChange={onPhotoChange} disabled={uploading} />
+                </label>
+                <p className="mt-2 text-xs text-muted-foreground">JPG/PNG, max 5MB. Face only — no nudity in profile pics.</p>
+              </div>
+            </div>
+
             <Input label="Nickname" name="nickname" defaultValue={profile?.nickname ?? ""} required />
             <Textarea label="Bio" name="bio" placeholder="A line or two about you…" defaultValue={profile?.bio ?? ""} />
 

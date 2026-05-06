@@ -113,6 +113,27 @@ export type Database = {
         }
         Returns: boolean
       }
+      nearby_profiles: {
+        Args: {
+          _lat: number
+          _limit?: number
+          _lng: number
+          _radius_km?: number
+        }
+        Returns: {
+          age: number
+          bio: string
+          city: string
+          distance_km: number
+          gender: Database["public"]["Enums"]["gender_type"]
+          id: string
+          intent: Database["public"]["Enums"]["intent_type"]
+          last_seen: string
+          nickname: string
+          online_status: boolean
+          photo_url: string
+        }[]
+      }
     }
     Enums: {
       account_status:
