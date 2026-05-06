@@ -23,15 +23,36 @@ function ProfilePage() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
     if (!user) { nav({ to: "/login" }); return; }
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
       setProfile(data);
+      setPhotoUrl(data?.photo_url ?? null);
       setLoading(false);
     });
   }, [user, authLoading, nav]);
+
+  async function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error("Max 5MB"); return; }
+    if (!file.type.startsWith("image/")) { toast.error("Image only"); return; }
+    setUploading(true);
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("photos").upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr) { setUploading(false); toast.error(upErr.message); return; }
+    const { data: signed } = await supabase.storage.from("photos").createSignedUrl(path, 60 * 60 * 24 * 365);
+    const url = signed?.signedUrl ?? null;
+    await supabase.from("profiles").update({ photo_url: url }).eq("id", user.id);
+    setPhotoUrl(url);
+    setUploading(false);
+    toast.success("Photo updated");
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
