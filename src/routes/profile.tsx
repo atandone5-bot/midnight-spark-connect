@@ -110,6 +110,25 @@ function ProfilePage() {
           </div>
 
           <form onSubmit={onSubmit} className="space-y-5">
+            <div className="flex items-center gap-5">
+              <div className="relative h-24 w-24 rounded-2xl overflow-hidden bg-gradient-to-br from-card to-secondary border border-border flex items-center justify-center shrink-0">
+                {photoUrl ? (
+                  <img src={photoUrl} alt="Avatar" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="font-display text-3xl font-bold text-muted-foreground/50">
+                    {(profile?.nickname?.[0] ?? "?").toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1">
+                <label className="inline-block cursor-pointer rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-card transition">
+                  {uploading ? "Uploading…" : photoUrl ? "Change photo" : "Upload photo"}
+                  <input type="file" accept="image/*" className="hidden" onChange={onPhotoChange} disabled={uploading} />
+                </label>
+                <p className="mt-2 text-xs text-muted-foreground">JPG/PNG, max 5MB. Face only — no nudity in profile pics.</p>
+              </div>
+            </div>
+
             <Input label="Nickname" name="nickname" defaultValue={profile?.nickname ?? ""} required />
             <Textarea label="Bio" name="bio" placeholder="A line or two about you…" defaultValue={profile?.bio ?? ""} />
 
