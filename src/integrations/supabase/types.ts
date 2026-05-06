@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      photo_moderation_log: {
+        Row: {
+          created_at: string
+          id: string
+          reason: string | null
+          reviewer: string
+          status: Database["public"]["Enums"]["photo_moderation_status"]
+          storage_path: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reason?: string | null
+          reviewer?: string
+          status: Database["public"]["Enums"]["photo_moderation_status"]
+          storage_path: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reason?: string | null
+          reviewer?: string
+          status?: Database["public"]["Enums"]["photo_moderation_status"]
+          storage_path?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           age: number
@@ -28,6 +58,12 @@ export type Database = {
           longitude: number | null
           nickname: string
           online_status: boolean
+          photo_pending_path: string | null
+          photo_rejection_reason: string | null
+          photo_reviewed_at: string | null
+          photo_status:
+            | Database["public"]["Enums"]["photo_moderation_status"]
+            | null
           photo_url: string | null
           preference: Database["public"]["Enums"]["preference_type"] | null
           premium_ends_at: string | null
@@ -49,6 +85,12 @@ export type Database = {
           longitude?: number | null
           nickname: string
           online_status?: boolean
+          photo_pending_path?: string | null
+          photo_rejection_reason?: string | null
+          photo_reviewed_at?: string | null
+          photo_status?:
+            | Database["public"]["Enums"]["photo_moderation_status"]
+            | null
           photo_url?: string | null
           preference?: Database["public"]["Enums"]["preference_type"] | null
           premium_ends_at?: string | null
@@ -70,6 +112,12 @@ export type Database = {
           longitude?: number | null
           nickname?: string
           online_status?: boolean
+          photo_pending_path?: string | null
+          photo_rejection_reason?: string | null
+          photo_reviewed_at?: string | null
+          photo_status?:
+            | Database["public"]["Enums"]["photo_moderation_status"]
+            | null
           photo_url?: string | null
           preference?: Database["public"]["Enums"]["preference_type"] | null
           premium_ends_at?: string | null
@@ -145,6 +193,7 @@ export type Database = {
       app_role: "admin" | "moderator" | "user"
       gender_type: "male" | "female" | "other"
       intent_type: "hosting" | "traveling" | "need_room" | "chill"
+      photo_moderation_status: "pending" | "approved" | "rejected"
       preference_type: "male" | "female" | "both"
     }
     CompositeTypes: {
@@ -283,6 +332,7 @@ export const Constants = {
       app_role: ["admin", "moderator", "user"],
       gender_type: ["male", "female", "other"],
       intent_type: ["hosting", "traveling", "need_room", "chill"],
+      photo_moderation_status: ["pending", "approved", "rejected"],
       preference_type: ["male", "female", "both"],
     },
   },
