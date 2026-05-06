@@ -53,6 +53,17 @@ function SignupPage() {
         <Field label="Email" name="email" type="email" placeholder="you@example.com" error={errors.email} />
         <Field label="Age" name="age" type="number" min={18} max={120} placeholder="18+" error={errors.age} />
         <Field label="Password" name="password" type="password" placeholder="At least 8 characters" error={errors.password} />
+
+        <label className="flex items-start gap-2.5 text-xs text-muted-foreground leading-relaxed cursor-pointer">
+          <input type="checkbox" name="agree" className="mt-0.5 h-4 w-4 accent-primary shrink-0" />
+          <span>
+            I confirm I am 18+ and agree to the{" "}
+            <Link to="/terms" className="text-primary hover:underline">Terms</Link> and{" "}
+            <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
+          </span>
+        </label>
+        {errors.agree && <span className="block text-xs text-primary -mt-2">{errors.agree}</span>}
+
         <button disabled={loading} className="w-full rounded-xl bg-primary py-3 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50 transition">
           {loading ? "Creating account…" : "Start free trial"}
         </button>
