@@ -1,0 +1,1 @@
+## What's wrong now & what we're adding\n\n### Bug fixes\n1. **Discover empty even at same GPS** — `supabase.from(\
