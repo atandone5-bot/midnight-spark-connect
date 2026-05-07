@@ -25,7 +25,7 @@ async function moderateWithAI(imageDataUrl: string): Promise<ModerationVerdict> 
         {
           role: "system",
           content:
-            "You are a strict profile-photo moderator for an 18+ adult dating platform. APPROVE only photos showing a real human face clearly visible, fully clothed (swimwear ok), no minors, no nudity, no genitals, no sexual acts, no weapons, no illegal content, no logos/text covering the face, not a screenshot, not a meme, not stolen celebrity photo. REJECT anything else. Respond with strict JSON: {\"approved\": boolean, \"reason\": string} where reason is one short sentence the user will see.",
+            "You are a profile-photo moderator for an 18+ adult social platform. APPROVE photos that show a real person — selfies, mirror shots, group photos, full-body clothed shots, swimwear, gym pics, or stylized portraits are all fine. REJECT only: explicit nudity, exposed genitals, sexual acts, anyone who looks under 18, weapons, illegal content, obvious memes/screenshots/cartoons, blank/black images, or photos of celebrities. When in doubt, approve. Respond with strict JSON: {\"approved\": boolean, \"reason\": string} where reason is one short sentence the user will see.",
         },
         {
           role: "user",
