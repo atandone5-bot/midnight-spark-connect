@@ -55,7 +55,8 @@ function ProfilePage() {
       const result = await submitPhoto({ data: { storagePath: path } });
       const { data: fresh } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
       setProfile(fresh);
-      setPhotoUrl(fresh?.photo_url ?? null);
+      // Cache-bust so the browser doesn't keep the old image
+      setPhotoUrl(fresh?.photo_url ? `${fresh.photo_url}${fresh.photo_url.includes("?") ? "&" : "?"}v=${Date.now()}` : null);
       if (result.status === "approved") toast.success("Photo approved");
       else toast.error(`Photo rejected — ${result.reason}`);
     } catch (err: any) {
