@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string
+          user_a: string
+          user_b: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          user_a: string
+          user_b: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          user_a?: string
+          user_b?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          body: string
+          conversation_id: string
+          created_at: string
+          id: string
+          read_at: string | null
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       photo_moderation_log: {
         Row: {
           created_at: string
@@ -128,6 +187,42 @@ export type Database = {
         }
         Relationships: []
       }
+      transactions: {
+        Row: {
+          amount_kes: number
+          chats_delta: number
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["tx_kind"]
+          meta: Json | null
+          reference: string | null
+          status: Database["public"]["Enums"]["tx_status"]
+          user_id: string
+        }
+        Insert: {
+          amount_kes?: number
+          chats_delta?: number
+          created_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["tx_kind"]
+          meta?: Json | null
+          reference?: string | null
+          status?: Database["public"]["Enums"]["tx_status"]
+          user_id: string
+        }
+        Update: {
+          amount_kes?: number
+          chats_delta?: number
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["tx_kind"]
+          meta?: Json | null
+          reference?: string | null
+          status?: Database["public"]["Enums"]["tx_status"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -149,11 +244,47 @@ export type Database = {
         }
         Relationships: []
       }
+      wallets: {
+        Row: {
+          chats_balance: number
+          created_at: string
+          is_premium: boolean
+          premium_ends_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chats_balance?: number
+          created_at?: string
+          is_premium?: boolean
+          premium_ends_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chats_balance?: number
+          created_at?: string
+          is_premium?: boolean
+          premium_ends_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      activate_premium: {
+        Args: { _amount: number; _ref: string; _user: string }
+        Returns: undefined
+      }
+      credit_wallet: {
+        Args: { _amount: number; _chats: number; _ref: string; _user: string }
+        Returns: undefined
+      }
+      debit_chat: { Args: { _user: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -195,6 +326,8 @@ export type Database = {
       intent_type: "hosting" | "traveling" | "need_room" | "chill"
       photo_moderation_status: "pending" | "approved" | "rejected"
       preference_type: "male" | "female" | "both"
+      tx_kind: "topup" | "debit" | "premium" | "bonus"
+      tx_status: "pending" | "success" | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -334,6 +467,8 @@ export const Constants = {
       intent_type: ["hosting", "traveling", "need_room", "chill"],
       photo_moderation_status: ["pending", "approved", "rejected"],
       preference_type: ["male", "female", "both"],
+      tx_kind: ["topup", "debit", "premium", "bonus"],
+      tx_status: ["pending", "success", "failed"],
     },
   },
 } as const
