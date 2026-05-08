@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Logo } from "@/components/Logo";
 import { useServerFn } from "@tanstack/react-start";
-import { openConversation } from "@/lib/chat.functions";
+import { resolveConversation } from "@/lib/chat.functions";
 import { LogOut, MapPin, User as UserIcon, Navigation, MessageCircle, Sparkles, Crown } from "lucide-react";
 import { toast } from "sonner";
 
@@ -27,7 +27,7 @@ function Discover() {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [radius, setRadius] = useState(50);
   const [geoError, setGeoError] = useState<string | null>(null);
-  const openConvo = useServerFn(openConversation);
+  const openConvo = useServerFn(resolveConversation);
 
   useEffect(() => {
     if (authLoading) return;
@@ -95,7 +95,7 @@ function Discover() {
 
   async function startChat(otherId: string) {
     try {
-      const res = await openConvo({ data: { otherUserId: otherId } });
+      const res = await openConvo({ data: { targetId: otherId } });
       nav({ to: "/chat/$id", params: { id: res.id } });
     } catch (err: any) {
       toast.error(err?.message ?? "Could not open chat");

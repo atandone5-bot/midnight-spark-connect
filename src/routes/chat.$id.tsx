@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
-import { sendMessage, markRead } from "@/lib/chat.functions";
+import { sendMessage, markRead, resolveConversation } from "@/lib/chat.functions";
 import { toast } from "sonner";
 import { ArrowLeft, Send, Lock, Check, CheckCheck, Loader2 } from "lucide-react";
 
@@ -16,6 +16,7 @@ function ChatRoom() {
   const { user, loading } = useAuth();
   const nav = useNavigate();
   const [messages, setMessages] = useState<Msg[]>([]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [other, setOther] = useState<{ id: string; nickname: string; photo_url: string | null; online_status: boolean } | null>(null);
   const [wallet, setWallet] = useState<{ chats_balance: number; is_premium: boolean; premium_ends_at: string | null } | null>(null);
   const [body, setBody] = useState("");
@@ -24,6 +25,7 @@ function ChatRoom() {
 
   const send = useServerFn(sendMessage);
   const mark = useServerFn(markRead);
+  const resolve = useServerFn(resolveConversation);
 
   const isPremium = !!wallet?.is_premium && !!wallet.premium_ends_at && new Date(wallet.premium_ends_at) > new Date();
   const canRead = isPremium || (wallet?.chats_balance ?? 0) > 0;
@@ -32,48 +34,51 @@ function ChatRoom() {
     if (loading) return;
     if (!user) { nav({ to: "/login" }); return; }
     (async () => {
-      const c = await supabase.from("conversations").select("user_a,user_b").eq("id", id).maybeSingle();
-      if (!c.data) { toast.error("Conversation not found"); nav({ to: "/discover" }); return; }
-      const otherId = c.data.user_a === user.id ? c.data.user_b : c.data.user_a;
+      const resolved = await resolve({ data: { targetId: id } });
+      setConversationId(resolved.id);
+      const otherId = resolved.otherUserId;
       const [{ data: prof }, { data: w }, { data: msgs }] = await Promise.all([
         supabase.from("profiles").select("id,nickname,photo_url,photo_status,online_status").eq("id", otherId).maybeSingle(),
         supabase.from("wallets").select("chats_balance,is_premium,premium_ends_at").eq("user_id", user.id).maybeSingle(),
-        supabase.from("messages").select("id,sender_id,body,created_at,read_at").eq("conversation_id", id).order("created_at", { ascending: true }),
+        supabase.from("messages").select("id,sender_id,body,created_at,read_at").eq("conversation_id", resolved.id).order("created_at", { ascending: true }),
       ]);
       setOther(prof ? { id: prof.id, nickname: prof.nickname, photo_url: prof.photo_status === "approved" ? prof.photo_url : null, online_status: prof.online_status } : null);
       setWallet(w as any);
       setMessages((msgs ?? []) as Msg[]);
-    })();
-  }, [id, user, loading, nav]);
+    })().catch((err: any) => {
+      toast.error(err?.message ?? "Conversation not found");
+      nav({ to: "/discover" });
+    });
+  }, [id, user, loading, nav, resolve]);
 
   // Realtime new messages + read receipts
   useEffect(() => {
-    if (!user) return;
-    const ch = supabase.channel(`chat-${id}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${id}` },
+    if (!user || !conversationId) return;
+    const ch = supabase.channel(`chat-${conversationId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
         (payload) => setMessages((m) => [...m, payload.new as Msg]))
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `conversation_id=eq.${id}` },
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
         (payload) => setMessages((m) => m.map(x => x.id === (payload.new as Msg).id ? payload.new as Msg : x)))
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [id, user]);
+  }, [conversationId, user]);
 
   // Mark read when viewing & has access
   useEffect(() => {
-    if (!user || !canRead || messages.length === 0) return;
+    if (!user || !canRead || messages.length === 0 || !conversationId) return;
     const hasUnread = messages.some(m => m.sender_id !== user.id && !m.read_at);
-    if (hasUnread) mark({ data: { conversationId: id } }).catch(() => {});
-  }, [messages, user, canRead, id, mark]);
+    if (hasUnread) mark({ data: { conversationId } }).catch(() => {});
+  }, [messages, user, canRead, conversationId, mark]);
 
   // Auto-scroll
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages]);
 
   async function onSend(e: React.FormEvent) {
     e.preventDefault();
-    if (!body.trim() || sending) return;
+    if (!body.trim() || sending || !conversationId) return;
     setSending(true);
     try {
-      const res = await send({ data: { conversationId: id, body: body.trim() } });
+      const res = await send({ data: { conversationId, body: body.trim() } });
       if (!res.ok && res.code === "INSUFFICIENT_CHATS") {
         toast.error("Out of chats — top up to keep talking");
         nav({ to: "/pricing" });
