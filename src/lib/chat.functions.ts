@@ -8,8 +8,10 @@ const ResolveSchema = z.object({ targetId: z.string().uuid() });
 const SendSchema = z.object({
   conversationId: z.string().uuid(),
   body: z.string().trim().min(1).max(2000),
+  replyToId: z.string().uuid().nullable().optional(),
 });
 const MarkReadSchema = z.object({ conversationId: z.string().uuid() });
+const ReactSchema = z.object({ messageId: z.string().uuid(), emoji: z.string().min(1).max(8) });
 
 async function ensureConversationRecord(me: string, otherUserId: string) {
   if (me === otherUserId) throw new Error("Cannot chat with yourself");
@@ -83,10 +85,29 @@ export const sendMessage = createServerFn({ method: "POST" })
 
     const ins = await supabaseAdmin.from("messages").insert({
       conversation_id: data.conversationId, sender_id: me, body: data.body,
+      reply_to_id: data.replyToId ?? null,
     }).select("id, created_at").single();
     if (ins.error) throw new Error(ins.error.message);
     await supabaseAdmin.from("conversations").update({ last_message_at: new Date().toISOString() }).eq("id", data.conversationId);
     return { ok: true as const, id: ins.data.id };
+  });
+
+export const toggleReaction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => ReactSchema.parse(i))
+  .handler(async ({ data, context }) => {
+    const me = context.userId;
+    const msg = await supabaseAdmin.from("messages").select("id, reactions, conversation_id").eq("id", data.messageId).maybeSingle();
+    if (!msg.data) throw new Error("Message not found");
+    const convo = await supabaseAdmin.from("conversations").select("user_a,user_b").eq("id", msg.data.conversation_id).maybeSingle();
+    if (!convo.data || ![convo.data.user_a, convo.data.user_b].includes(me)) throw new Error("Forbidden");
+    const reactions: Record<string, string[]> = (msg.data.reactions as any) ?? {};
+    const list = new Set(reactions[data.emoji] ?? []);
+    if (list.has(me)) list.delete(me); else list.add(me);
+    if (list.size === 0) delete reactions[data.emoji]; else reactions[data.emoji] = [...list];
+    const upd = await supabaseAdmin.from("messages").update({ reactions }).eq("id", data.messageId);
+    if (upd.error) throw new Error(upd.error.message);
+    return { ok: true };
   });
 
 export const markRead = createServerFn({ method: "POST" })
