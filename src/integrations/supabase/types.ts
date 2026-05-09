@@ -44,7 +44,9 @@ export type Database = {
           conversation_id: string
           created_at: string
           id: string
+          reactions: Json
           read_at: string | null
+          reply_to_id: string | null
           sender_id: string
         }
         Insert: {
@@ -52,7 +54,9 @@ export type Database = {
           conversation_id: string
           created_at?: string
           id?: string
+          reactions?: Json
           read_at?: string | null
+          reply_to_id?: string | null
           sender_id: string
         }
         Update: {
@@ -60,7 +64,9 @@ export type Database = {
           conversation_id?: string
           created_at?: string
           id?: string
+          reactions?: Json
           read_at?: string | null
+          reply_to_id?: string | null
           sender_id?: string
         }
         Relationships: [
@@ -69,6 +75,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
         ]
@@ -278,6 +291,33 @@ export type Database = {
     Functions: {
       activate_premium: {
         Args: { _amount: number; _ref: string; _user: string }
+        Returns: undefined
+      }
+      admin_dashboard_stats: { Args: never; Returns: Json }
+      admin_grant_chats: {
+        Args: { _chats: number; _note?: string; _target: string }
+        Returns: number
+      }
+      admin_recent_users: {
+        Args: { _limit?: number }
+        Returns: {
+          age: number
+          chats_balance: number
+          created_at: string
+          id: string
+          is_premium: boolean
+          last_seen: string
+          nickname: string
+          online_status: boolean
+          photo_status: Database["public"]["Enums"]["photo_moderation_status"]
+          status: Database["public"]["Enums"]["account_status"]
+        }[]
+      }
+      admin_set_status: {
+        Args: {
+          _status: Database["public"]["Enums"]["account_status"]
+          _target: string
+        }
         Returns: undefined
       }
       credit_wallet: {
