@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { Logo } from "@/components/Logo";
 import { useServerFn } from "@tanstack/react-start";
 import { resolveConversation } from "@/lib/chat.functions";
-import { LogOut, MapPin, User as UserIcon, Navigation, MessageCircle, Sparkles, Crown } from "lucide-react";
+import { LogOut, MapPin, User as UserIcon, Navigation, MessageCircle, Sparkles, Crown, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/discover")({ component: Discover });
@@ -27,6 +27,7 @@ function Discover() {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [radius, setRadius] = useState(50);
   const [geoError, setGeoError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const openConvo = useServerFn(resolveConversation);
 
   useEffect(() => {
@@ -35,7 +36,8 @@ function Discover() {
     Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
       supabase.from("wallets").select("chats_balance,is_premium,premium_ends_at").eq("user_id", user.id).maybeSingle(),
-    ]).then(([p, w]) => { setMe(p.data); setWallet(w.data as any); setLoading(false); });
+      supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle(),
+    ]).then(([p, w, r]) => { setMe(p.data); setWallet(w.data as any); setIsAdmin(!!r.data); setLoading(false); });
   }, [user, authLoading, nav]);
 
   // Geolocation — AWAIT the update so it actually fires
@@ -121,6 +123,7 @@ function Discover() {
             <Link to="/pricing" className="inline-flex items-center gap-1.5 rounded-full glass px-3 py-1.5 text-xs font-bold hover:border-primary/50 transition">
               {isPremium ? <><Crown className="h-3.5 w-3.5 text-primary" /> Premium</> : <><Sparkles className="h-3.5 w-3.5 text-primary" /> {wallet?.chats_balance ?? 0} chats</>}
             </Link>
+            {isAdmin && <Link to="/admin" className="rounded-xl border border-border p-2 hover:bg-card transition" title="Admin"><Shield className="h-4 w-4 text-primary" /></Link>}
             <Link to="/profile" className="rounded-xl border border-border p-2 hover:bg-card transition"><UserIcon className="h-4 w-4" /></Link>
             <button onClick={() => { signOut().then(() => nav({ to: "/" })); }}
               className="rounded-xl border border-border p-2 hover:bg-card transition"><LogOut className="h-4 w-4" /></button>
