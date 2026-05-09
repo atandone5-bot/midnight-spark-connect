@@ -33,12 +33,12 @@ export const grantChats = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => GrantSchema.parse(i))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { data: bal, error } = await supabaseAdmin.rpc("admin_grant_chats", { _target: data.targetUserId, _chats: data.chats, _note: data.note ?? null });
+    const { data: bal, error } = await supabaseAdmin.rpc("admin_grant_chats", { _target: data.targetUserId, _chats: data.chats, _note: data.note ?? undefined });
     if (error) throw new Error(error.message);
     return { newBalance: bal as number };
   });
 
-const StatusSchema = z.object({ targetUserId: z.string().uuid(), status: z.enum(["trial_active", "active", "suspended", "banned"]) });
+const StatusSchema = z.object({ targetUserId: z.string().uuid(), status: z.enum(["trial_active", "free", "premium_active", "suspended", "banned"]) });
 export const setUserStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => StatusSchema.parse(i))
