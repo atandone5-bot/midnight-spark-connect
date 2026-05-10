@@ -261,6 +261,7 @@ export type Database = {
         Row: {
           chats_balance: number
           created_at: string
+          free_chats_enabled: boolean
           is_premium: boolean
           premium_ends_at: string | null
           updated_at: string
@@ -269,6 +270,7 @@ export type Database = {
         Insert: {
           chats_balance?: number
           created_at?: string
+          free_chats_enabled?: boolean
           is_premium?: boolean
           premium_ends_at?: string | null
           updated_at?: string
@@ -277,6 +279,7 @@ export type Database = {
         Update: {
           chats_balance?: number
           created_at?: string
+          free_chats_enabled?: boolean
           is_premium?: boolean
           premium_ends_at?: string | null
           updated_at?: string
@@ -304,6 +307,7 @@ export type Database = {
           age: number
           chats_balance: number
           created_at: string
+          free_chats_enabled: boolean
           id: string
           is_premium: boolean
           last_seen: string
@@ -319,6 +323,10 @@ export type Database = {
           _target: string
         }
         Returns: undefined
+      }
+      admin_toggle_free_chats: {
+        Args: { _enabled: boolean; _target: string }
+        Returns: boolean
       }
       credit_wallet: {
         Args: { _amount: number; _chats: number; _ref: string; _user: string }
