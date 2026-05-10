@@ -193,6 +193,15 @@ function ChatRoom() {
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 relative">
         <div className="mx-auto max-w-3xl space-y-3">
+          {hasMore && (
+            <div className="flex justify-center pb-2">
+              <button onClick={loadOlder} disabled={loadingMore}
+                className="text-xs glass rounded-full px-4 py-1.5 font-semibold disabled:opacity-50 inline-flex items-center gap-2">
+                {loadingMore && <Loader2 className="h-3 w-3 animate-spin" />}
+                {loadingMore ? "Loading…" : "Load older messages"}
+              </button>
+            </div>
+          )}
           {messages.length === 0 && (
             <p className="text-center text-sm opacity-70 py-12">Say hi 👋 — first message costs 1 chat (KES 0.25).</p>
           )}
