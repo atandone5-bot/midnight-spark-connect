@@ -24,7 +24,7 @@ export const getAdminUsers = createServerFn({ method: "GET" })
     await assertAdmin(context.userId);
     const { data, error } = await supabaseAdmin.rpc("admin_recent_users", { _limit: 100 });
     if (error) throw new Error(error.message);
-    return data ?? [];
+    return Array.isArray(data) ? data : [];
   });
 
 const GrantSchema = z.object({ targetUserId: z.string().uuid(), chats: z.number().int().refine(n => n !== 0), note: z.string().max(200).optional() });
@@ -47,4 +47,15 @@ export const setUserStatus = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.rpc("admin_set_status", { _target: data.targetUserId, _status: data.status });
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+const FreeSchema = z.object({ targetUserId: z.string().uuid(), enabled: z.boolean() });
+export const toggleFreeChats = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => FreeSchema.parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { error } = await supabaseAdmin.rpc("admin_toggle_free_chats", { _target: data.targetUserId, _enabled: data.enabled });
+    if (error) throw new Error(error.message);
+    return { enabled: data.enabled };
   });
