@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { getAdminStats, getAdminUsers, grantChats, setUserStatus } from "@/lib/admin.functions";
+import { getAdminStats, getAdminUsers, grantChats, setUserStatus, toggleFreeChats } from "@/lib/admin.functions";
 import { toast } from "sonner";
-import { ArrowLeft, Crown, Users, Wifi, MessageSquare, ShieldAlert, ImageIcon, DollarSign, Loader2, Plus, Minus, Ban, RotateCcw } from "lucide-react";
+import { ArrowLeft, Crown, Users, Wifi, MessageSquare, ShieldAlert, ImageIcon, DollarSign, Loader2, Plus, Minus, Ban, RotateCcw, Pause, Play } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({ component: AdminPage });
 
@@ -13,7 +13,7 @@ type Stats = Record<string, number>;
 type Row = {
   id: string; nickname: string; age: number; status: string;
   photo_status: string | null; online_status: boolean; last_seen: string;
-  chats_balance: number; is_premium: boolean; created_at: string;
+  chats_balance: number; is_premium: boolean; free_chats_enabled: boolean; created_at: string;
 };
 
 function AdminPage() {
