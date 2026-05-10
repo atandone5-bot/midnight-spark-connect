@@ -29,6 +29,7 @@ function AdminPage() {
   const fetchUsers = useServerFn(getAdminUsers);
   const grant = useServerFn(grantChats);
   const setStatus = useServerFn(setUserStatus);
+  const toggleFree = useServerFn(toggleFreeChats);
 
   useEffect(() => {
     if (loading) return;
