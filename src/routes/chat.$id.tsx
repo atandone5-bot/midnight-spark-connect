@@ -120,7 +120,8 @@ function ChatRoom() {
     if (hasUnread) mark({ data: { conversationId } }).catch(() => {});
   }, [messages, user, canRead, conversationId, mark]);
 
-  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages]);
+  const lastMsgId = messages[messages.length - 1]?.id;
+  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [lastMsgId]);
 
   const msgIndex = useMemo(() => Object.fromEntries(messages.map(m => [m.id, m])), [messages]);
 
