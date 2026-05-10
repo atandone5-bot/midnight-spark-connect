@@ -74,12 +74,11 @@ export const sendMessage = createServerFn({ method: "POST" })
     if (!convo.data) throw new Error("Conversation not found");
     if (![convo.data.user_a, convo.data.user_b].includes(me)) throw new Error("Forbidden");
 
-    // Atomic debit (throws INSUFFICIENT_CHATS if zero & not premium)
+    // Atomic debit (throws INSUFFICIENT_CHATS / FREE_CHATS_DISABLED if blocked)
     const { error: debitErr } = await supabaseAdmin.rpc("debit_chat", { _user: me });
     if (debitErr) {
-      if (debitErr.message.includes("INSUFFICIENT_CHATS")) {
-        return { ok: false as const, code: "INSUFFICIENT_CHATS" as const };
-      }
+      if (debitErr.message.includes("INSUFFICIENT_CHATS")) return { ok: false as const, code: "INSUFFICIENT_CHATS" as const };
+      if (debitErr.message.includes("FREE_CHATS_DISABLED")) return { ok: false as const, code: "FREE_CHATS_DISABLED" as const };
       throw new Error(debitErr.message);
     }
 

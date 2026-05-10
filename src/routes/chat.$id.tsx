@@ -29,6 +29,8 @@ function ChatRoom() {
   const [showEmoji, setShowEmoji] = useState(false);
   const [showPickup, setShowPickup] = useState(false);
   const [showThemes, setShowThemes] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [theme, setTheme] = useState<ChatTheme>(() => {
     if (typeof window === "undefined") return CHAT_THEMES[0];
     const saved = window.localStorage.getItem(THEME_KEY);
@@ -44,33 +46,62 @@ function ChatRoom() {
   const isPremium = !!wallet?.is_premium && !!wallet.premium_ends_at && new Date(wallet.premium_ends_at) > new Date();
   const canRead = isPremium || (wallet?.chats_balance ?? 0) > 0;
 
+  const PAGE_SIZE = 50;
+
   useEffect(() => { if (typeof window !== "undefined") window.localStorage.setItem(THEME_KEY, theme.id); }, [theme]);
 
   useEffect(() => {
     if (loading) return;
     if (!user) { nav({ to: "/login" }); return; }
+    if (!id || id === "undefined") { setBootError("Invalid chat link"); return; }
     let cancelled = false;
     (async () => {
       try {
+        // Ensure session is fully hydrated before calling auth-protected server fn
+        await supabase.auth.getSession();
         const resolved = await resolve({ data: { targetId: id } });
         if (cancelled) return;
+        if (!resolved?.id || !resolved?.otherUserId) {
+          setBootError("Could not open chat");
+          return;
+        }
         setConversationId(resolved.id);
         const otherId = resolved.otherUserId;
         const [{ data: prof }, { data: w }, { data: msgs }] = await Promise.all([
           supabase.from("profiles").select("id,nickname,photo_url,photo_status,online_status").eq("id", otherId).maybeSingle(),
           supabase.from("wallets").select("chats_balance,is_premium,premium_ends_at").eq("user_id", user.id).maybeSingle(),
-          supabase.from("messages").select("id,sender_id,body,created_at,read_at,reply_to_id,reactions").eq("conversation_id", resolved.id).order("created_at", { ascending: true }),
+          supabase.from("messages").select("id,sender_id,body,created_at,read_at,reply_to_id,reactions")
+            .eq("conversation_id", resolved.id).order("created_at", { ascending: false }).limit(PAGE_SIZE + 1),
         ]);
         if (cancelled) return;
         setOther(prof ? { id: prof.id, nickname: prof.nickname, photo_url: prof.photo_status === "approved" ? prof.photo_url : null, online_status: prof.online_status } : { id: otherId, nickname: "User", photo_url: null, online_status: false });
         setWallet(w as any);
-        setMessages((msgs ?? []) as any);
+        const list = (msgs ?? []) as any[];
+        setHasMore(list.length > PAGE_SIZE);
+        setMessages(list.slice(0, PAGE_SIZE).reverse() as any);
       } catch (err: any) {
         if (!cancelled) setBootError(err?.message ?? "Could not open chat");
       }
     })();
     return () => { cancelled = true; };
   }, [id, user, loading, nav, resolve]);
+
+  async function loadOlder() {
+    if (!conversationId || loadingMore || !hasMore || messages.length === 0) return;
+    setLoadingMore(true);
+    try {
+      const oldest = messages[0].created_at;
+      const { data } = await supabase.from("messages")
+        .select("id,sender_id,body,created_at,read_at,reply_to_id,reactions")
+        .eq("conversation_id", conversationId)
+        .lt("created_at", oldest)
+        .order("created_at", { ascending: false })
+        .limit(PAGE_SIZE + 1);
+      const list = (data ?? []) as any[];
+      setHasMore(list.length > PAGE_SIZE);
+      setMessages(prev => [...(list.slice(0, PAGE_SIZE).reverse() as any), ...prev]);
+    } finally { setLoadingMore(false); }
+  }
 
   useEffect(() => {
     if (!user || !conversationId) return;
@@ -89,7 +120,8 @@ function ChatRoom() {
     if (hasUnread) mark({ data: { conversationId } }).catch(() => {});
   }, [messages, user, canRead, conversationId, mark]);
 
-  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages]);
+  const lastMsgId = messages[messages.length - 1]?.id;
+  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [lastMsgId]);
 
   const msgIndex = useMemo(() => Object.fromEntries(messages.map(m => [m.id, m])), [messages]);
 
@@ -100,6 +132,11 @@ function ChatRoom() {
       const res = await send({ data: { conversationId, body: text.trim(), replyToId: replyTo?.id ?? null } });
       if (!res.ok && res.code === "INSUFFICIENT_CHATS") {
         toast.error("Out of chats — top up to keep talking");
+        nav({ to: "/pricing" });
+        return;
+      }
+      if (!res.ok && res.code === "FREE_CHATS_DISABLED") {
+        toast.error("Your free chats are paused by admin. Buy a pack to continue.");
         nav({ to: "/pricing" });
         return;
       }
@@ -157,6 +194,15 @@ function ChatRoom() {
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 relative">
         <div className="mx-auto max-w-3xl space-y-3">
+          {hasMore && (
+            <div className="flex justify-center pb-2">
+              <button onClick={loadOlder} disabled={loadingMore}
+                className="text-xs glass rounded-full px-4 py-1.5 font-semibold disabled:opacity-50 inline-flex items-center gap-2">
+                {loadingMore && <Loader2 className="h-3 w-3 animate-spin" />}
+                {loadingMore ? "Loading…" : "Load older messages"}
+              </button>
+            </div>
+          )}
           {messages.length === 0 && (
             <p className="text-center text-sm opacity-70 py-12">Say hi 👋 — first message costs 1 chat (KES 0.25).</p>
           )}
