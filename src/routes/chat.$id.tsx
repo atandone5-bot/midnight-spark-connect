@@ -134,6 +134,11 @@ function ChatRoom() {
         nav({ to: "/pricing" });
         return;
       }
+      if (!res.ok && res.code === "FREE_CHATS_DISABLED") {
+        toast.error("Your free chats are paused by admin. Buy a pack to continue.");
+        nav({ to: "/pricing" });
+        return;
+      }
       setBody(""); setReplyTo(null); setShowEmoji(false); setShowPickup(false);
       const { data: w } = await supabase.from("wallets").select("chats_balance,is_premium,premium_ends_at").eq("user_id", user!.id).maybeSingle();
       setWallet(w as any);
