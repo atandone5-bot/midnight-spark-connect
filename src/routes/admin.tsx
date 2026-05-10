@@ -121,6 +121,7 @@ function AdminPage() {
                   <th className="text-left px-2 py-2">Photo</th>
                   <th className="text-right px-2 py-2">Chats</th>
                   <th className="text-center px-2 py-2">Premium</th>
+                  <th className="text-center px-2 py-2">Free</th>
                   <th className="text-right px-2 py-2">Actions</th>
                 </tr>
               </thead>
