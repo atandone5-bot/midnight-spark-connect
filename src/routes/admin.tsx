@@ -44,8 +44,15 @@ function AdminPage() {
   async function refresh() {
     try {
       const [s, u] = await Promise.all([fetchStats(), fetchUsers()]);
-      setStats(s); setUsers(u as Row[]);
+      setStats(s); setUsers(Array.isArray(u) ? (u as Row[]) : []);
     } catch (err: any) { toast.error(err?.message ?? "Load failed"); }
+  }
+
+  async function onToggleFree(id: string, enabled: boolean) {
+    setBusy(id);
+    try { await toggleFree({ data: { targetUserId: id, enabled } }); toast.success(enabled ? "Free chats restored" : "Free chats paused"); await refresh(); }
+    catch (err: any) { toast.error(err?.message ?? "Failed"); }
+    finally { setBusy(null); }
   }
 
   async function onGrant(id: string, n: number) {
