@@ -204,7 +204,7 @@ function ChatRoom() {
             </div>
           )}
           {messages.length === 0 && (
-            <p className="text-center text-sm opacity-70 py-12">Say hi 👋 — first message costs 1 chat (KES 0.25).</p>
+            <p className="text-center text-sm opacity-70 py-12">Say hi 👋</p>
           )}
           {messages.map((m) => {
             const mine = m.sender_id === user!.id;
