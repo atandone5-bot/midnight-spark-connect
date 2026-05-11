@@ -35,6 +35,20 @@ function AdminPage() {
   const grant = useServerFn(grantChats);
   const setStatus = useServerFn(setUserStatus);
   const toggleFree = useServerFn(toggleFreeChats);
+  const fetchConvos = useServerFn(getAdminConversations);
+  const fetchMsgs = useServerFn(getAdminMessages);
+
+  async function loadConvos() {
+    setLoadingConvos(true);
+    try { const c = await fetchConvos(); setConvos(c as any); }
+    catch (err: any) { toast.error(err?.message ?? "Failed"); }
+    finally { setLoadingConvos(false); }
+  }
+  async function openConvo(id: string) {
+    setActiveConvo(id); setConvoMsgs([]);
+    try { const m = await fetchMsgs({ data: { conversationId: id } }); setConvoMsgs(m as any); }
+    catch (err: any) { toast.error(err?.message ?? "Failed"); }
+  }
 
   useEffect(() => {
     if (loading) return;
