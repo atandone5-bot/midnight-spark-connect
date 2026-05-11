@@ -204,7 +204,7 @@ function ChatRoom() {
             </div>
           )}
           {messages.length === 0 && (
-            <p className="text-center text-sm opacity-70 py-12">Say hi 👋 — first message costs 1 chat (KES 0.25).</p>
+            <p className="text-center text-sm opacity-70 py-12">Say hi 👋</p>
           )}
           {messages.map((m) => {
             const mine = m.sender_id === user!.id;
@@ -314,11 +314,6 @@ function ChatRoom() {
             {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
           </button>
         </div>
-        {!isPremium && (
-          <p className="mx-auto max-w-3xl mt-1.5 text-[10px] opacity-60 text-center">
-            1 message = 1 chat (KES 0.25) · {wallet?.chats_balance ?? 0} left
-          </p>
-        )}
       </form>
     </div>
   );

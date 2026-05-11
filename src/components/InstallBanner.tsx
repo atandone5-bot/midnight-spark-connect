@@ -45,11 +45,15 @@ export function InstallBanner() {
     };
   }, []);
 
-  // Re-show on every route change unless installed
+  // Show once per session, hide on admin/chat routes, never re-show after dismiss
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (isStandalone()) return;
-    try { if (localStorage.getItem("ad_installed") === "1") return; } catch {}
+    if (isStandalone()) { setVisible(false); return; }
+    if (location.startsWith("/admin") || location.startsWith("/chat")) { setVisible(false); return; }
+    try {
+      if (localStorage.getItem("ad_installed") === "1") return;
+      if (localStorage.getItem("ad_install_dismissed") === "1") return;
+    } catch {}
     setIosHelp(false);
     setVisible(true);
   }, [location]);
@@ -93,7 +97,7 @@ export function InstallBanner() {
           Install
         </button>
         <button
-          onClick={() => setVisible(false)}
+          onClick={() => { try { localStorage.setItem("ad_install_dismissed", "1"); } catch {} setVisible(false); }}
           aria-label="Dismiss"
           className="text-muted-foreground hover:text-foreground text-lg leading-none px-1 shrink-0"
         >

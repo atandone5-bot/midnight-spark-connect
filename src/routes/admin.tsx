@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { getAdminStats, getAdminUsers, grantChats, setUserStatus, toggleFreeChats } from "@/lib/admin.functions";
+import { getAdminStats, getAdminUsers, grantChats, setUserStatus, toggleFreeChats, getAdminConversations, getAdminMessages } from "@/lib/admin.functions";
 import { toast } from "sonner";
-import { ArrowLeft, Crown, Users, Wifi, MessageSquare, ShieldAlert, ImageIcon, DollarSign, Loader2, Plus, Minus, Ban, RotateCcw, Pause, Play } from "lucide-react";
+import { ArrowLeft, Crown, Users, Wifi, MessageSquare, ShieldAlert, ImageIcon, DollarSign, Loader2, Plus, Minus, Ban, RotateCcw, Pause, Play, BarChart3 } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({ component: AdminPage });
 
@@ -24,12 +24,31 @@ function AdminPage() {
   const [users, setUsers] = useState<Row[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
+  const [tab, setTab] = useState<"stats" | "users" | "messages">("stats");
+  const [convos, setConvos] = useState<Array<{ id: string; a: { id: string; nickname: string }; b: { id: string; nickname: string }; last_message_at: string }>>([]);
+  const [activeConvo, setActiveConvo] = useState<string | null>(null);
+  const [convoMsgs, setConvoMsgs] = useState<Array<{ id: string; sender_id: string; body: string; created_at: string }>>([]);
+  const [loadingConvos, setLoadingConvos] = useState(false);
 
   const fetchStats = useServerFn(getAdminStats);
   const fetchUsers = useServerFn(getAdminUsers);
   const grant = useServerFn(grantChats);
   const setStatus = useServerFn(setUserStatus);
   const toggleFree = useServerFn(toggleFreeChats);
+  const fetchConvos = useServerFn(getAdminConversations);
+  const fetchMsgs = useServerFn(getAdminMessages);
+
+  async function loadConvos() {
+    setLoadingConvos(true);
+    try { const c = await fetchConvos(); setConvos(c as any); }
+    catch (err: any) { toast.error(err?.message ?? "Failed"); }
+    finally { setLoadingConvos(false); }
+  }
+  async function openConvo(id: string) {
+    setActiveConvo(id); setConvoMsgs([]);
+    try { const m = await fetchMsgs({ data: { conversationId: id } }); setConvoMsgs(m as any); }
+    catch (err: any) { toast.error(err?.message ?? "Failed"); }
+  }
 
   useEffect(() => {
     if (loading) return;
@@ -88,11 +107,20 @@ function AdminPage() {
             <Link to="/discover" className="p-2 rounded-xl hover:bg-card"><ArrowLeft className="h-4 w-4" /></Link>
             <h1 className="font-display text-xl font-bold flex items-center gap-2"><Crown className="h-5 w-5 text-primary" /> Admin</h1>
           </div>
-          <button onClick={refresh} className="text-xs glass rounded-full px-3 py-1.5 font-semibold">Refresh</button>
+          <button onClick={() => { void refresh(); if (tab === "messages") void loadConvos(); }} className="text-xs glass rounded-full px-3 py-1.5 font-semibold">Refresh</button>
         </div>
+        <nav className="mx-auto max-w-7xl px-6 pb-3 flex gap-2">
+          {([["stats", "Stats", BarChart3], ["users", "Users", Users], ["messages", "Messages", MessageSquare]] as const).map(([k, label, Icon]) => (
+            <button key={k} onClick={() => { setTab(k); if (k === "messages" && convos.length === 0) void loadConvos(); }}
+              className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition ${tab === k ? "border-primary bg-primary/15 text-primary font-semibold" : "border-border hover:bg-card"}`}>
+              <Icon className="h-3.5 w-3.5" />{label}
+            </button>
+          ))}
+        </nav>
       </header>
 
       <main className="mx-auto max-w-7xl px-6 py-8 space-y-8">
+        {tab === "stats" && (
         <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <Stat icon={<Users className="h-4 w-4" />} label="Users" value={stats?.users_total ?? 0} />
           <Stat icon={<Wifi className="h-4 w-4 text-success" />} label="Online" value={stats?.users_online ?? 0} />
@@ -105,7 +133,9 @@ function AdminPage() {
           <Stat icon={<ImageIcon className="h-4 w-4 text-destructive" />} label="Photos rejected" value={stats?.photos_rejected ?? 0} />
           <Stat icon={<Ban className="h-4 w-4 text-destructive" />} label="Suspended" value={stats?.suspended ?? 0} />
         </section>
+        )}
 
+        {tab === "users" && (
         <section className="glass rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
             <h2 className="font-semibold">Recent users</h2>
@@ -165,6 +195,44 @@ function AdminPage() {
             </table>
           </div>
         </section>
+        )}
+
+        {tab === "messages" && (
+        <section className="glass rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+            <h2 className="font-semibold">Conversations</h2>
+            <button onClick={loadConvos} disabled={loadingConvos} className="text-xs glass rounded-full px-3 py-1.5 font-semibold disabled:opacity-50">
+              {loadingConvos ? "Loading…" : "Reload"}
+            </button>
+          </div>
+          <div className="grid md:grid-cols-[280px_1fr] gap-4">
+            <div className="rounded-xl border border-border max-h-[60vh] overflow-y-auto divide-y divide-border/60">
+              {convos.length === 0 && <p className="text-xs text-muted-foreground p-4 text-center">No conversations.</p>}
+              {convos.map(c => (
+                <button key={c.id} onClick={() => openConvo(c.id)}
+                  className={`w-full text-left p-3 hover:bg-card transition ${activeConvo === c.id ? "bg-card" : ""}`}>
+                  <div className="text-xs font-semibold truncate">{c.a.nickname} ↔ {c.b.nickname}</div>
+                  <div className="text-[10px] text-muted-foreground">{new Date(c.last_message_at).toLocaleString()}</div>
+                </button>
+              ))}
+            </div>
+            <div className="rounded-xl border border-border min-h-[40vh] max-h-[60vh] overflow-y-auto p-3 space-y-2">
+              {!activeConvo && <p className="text-xs text-muted-foreground text-center pt-8">Select a conversation to read messages.</p>}
+              {activeConvo && convoMsgs.length === 0 && <p className="text-xs text-muted-foreground text-center pt-8">No messages.</p>}
+              {convoMsgs.map(m => {
+                const convo = convos.find(c => c.id === activeConvo);
+                const senderName = convo?.a.id === m.sender_id ? convo.a.nickname : convo?.b.nickname ?? "?";
+                return (
+                  <div key={m.id} className="text-sm">
+                    <div className="text-[10px] text-muted-foreground"><span className="font-semibold">{senderName}</span> · {new Date(m.created_at).toLocaleString()}</div>
+                    <div className="rounded-lg bg-card px-3 py-2 mt-0.5 whitespace-pre-wrap break-words">{m.body}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+        )}
       </main>
     </div>
   );
