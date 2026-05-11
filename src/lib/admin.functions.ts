@@ -59,3 +59,41 @@ export const toggleFreeChats = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { enabled: data.enabled };
   });
+
+export const getAdminConversations = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const { data: convos, error } = await supabaseAdmin
+      .from("conversations")
+      .select("id,user_a,user_b,last_message_at,created_at")
+      .order("last_message_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+    const ids = Array.from(new Set((convos ?? []).flatMap(c => [c.user_a, c.user_b])));
+    const { data: profs } = await supabaseAdmin.from("profiles").select("id,nickname").in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
+    const map = new Map((profs ?? []).map(p => [p.id, p.nickname]));
+    return (convos ?? []).map(c => ({
+      id: c.id,
+      a: { id: c.user_a, nickname: map.get(c.user_a) ?? "?" },
+      b: { id: c.user_b, nickname: map.get(c.user_b) ?? "?" },
+      last_message_at: c.last_message_at,
+    }));
+  });
+
+const ConvoIdSchema = z.object({ conversationId: z.string().uuid() });
+export const getAdminMessages = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => ConvoIdSchema.parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { data: msgs, error } = await supabaseAdmin
+      .from("messages")
+      .select("id,sender_id,body,created_at,read_at")
+      .eq("conversation_id", data.conversationId)
+      .order("created_at", { ascending: true })
+      .limit(500);
+    if (error) throw new Error(error.message);
+    return msgs ?? [];
+  });
+
