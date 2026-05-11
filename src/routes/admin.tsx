@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { getAdminStats, getAdminUsers, grantChats, setUserStatus, toggleFreeChats, getAdminConversations, getAdminMessages } from "@/lib/admin.functions";
 import { toast } from "sonner";
-import { ArrowLeft, Crown, Users, Wifi, MessageSquare, ShieldAlert, ImageIcon, DollarSign, Loader2, Plus, Minus, Ban, RotateCcw, Pause, Play, Eye, BarChart3 } from "lucide-react";
+import { ArrowLeft, Crown, Users, Wifi, MessageSquare, ShieldAlert, ImageIcon, DollarSign, Loader2, Plus, Minus, Ban, RotateCcw, Pause, Play, BarChart3 } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({ component: AdminPage });
 
