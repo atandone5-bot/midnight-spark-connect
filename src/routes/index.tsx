@@ -47,7 +47,7 @@ function Gate() {
               to="/signup"
               className="block w-full rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground glow-red hover:opacity-90 transition"
             >
-              Create account · 2-day free trial
+              Create account · Free SMS chats
             </Link>
             <Link
               to="/login"
