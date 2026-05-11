@@ -107,11 +107,20 @@ function AdminPage() {
             <Link to="/discover" className="p-2 rounded-xl hover:bg-card"><ArrowLeft className="h-4 w-4" /></Link>
             <h1 className="font-display text-xl font-bold flex items-center gap-2"><Crown className="h-5 w-5 text-primary" /> Admin</h1>
           </div>
-          <button onClick={refresh} className="text-xs glass rounded-full px-3 py-1.5 font-semibold">Refresh</button>
+          <button onClick={() => { void refresh(); if (tab === "messages") void loadConvos(); }} className="text-xs glass rounded-full px-3 py-1.5 font-semibold">Refresh</button>
         </div>
+        <nav className="mx-auto max-w-7xl px-6 pb-3 flex gap-2">
+          {([["stats", "Stats", BarChart3], ["users", "Users", Users], ["messages", "Messages", MessageSquare]] as const).map(([k, label, Icon]) => (
+            <button key={k} onClick={() => { setTab(k); if (k === "messages" && convos.length === 0) void loadConvos(); }}
+              className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition ${tab === k ? "border-primary bg-primary/15 text-primary font-semibold" : "border-border hover:bg-card"}`}>
+              <Icon className="h-3.5 w-3.5" />{label}
+            </button>
+          ))}
+        </nav>
       </header>
 
       <main className="mx-auto max-w-7xl px-6 py-8 space-y-8">
+        {tab === "stats" && (
         <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <Stat icon={<Users className="h-4 w-4" />} label="Users" value={stats?.users_total ?? 0} />
           <Stat icon={<Wifi className="h-4 w-4 text-success" />} label="Online" value={stats?.users_online ?? 0} />
