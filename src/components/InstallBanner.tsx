@@ -97,7 +97,7 @@ export function InstallBanner() {
           Install
         </button>
         <button
-          onClick={() => setVisible(false)}
+          onClick={() => { try { localStorage.setItem("ad_install_dismissed", "1"); } catch {} setVisible(false); }}
           aria-label="Dismiss"
           className="text-muted-foreground hover:text-foreground text-lg leading-none px-1 shrink-0"
         >
