@@ -14,6 +14,7 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DiscoverRouteImport } from './routes/discover'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -43,6 +44,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -76,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/discover': typeof DiscoverRoute
   '/login': typeof LoginRoute
+  '/messages': typeof MessagesRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/discover': typeof DiscoverRoute
   '/login': typeof LoginRoute
+  '/messages': typeof MessagesRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/discover': typeof DiscoverRoute
   '/login': typeof LoginRoute
+  '/messages': typeof MessagesRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
@@ -115,6 +124,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/discover'
     | '/login'
+    | '/messages'
     | '/pricing'
     | '/privacy'
     | '/profile'
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/discover'
     | '/login'
+    | '/messages'
     | '/pricing'
     | '/privacy'
     | '/profile'
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/discover'
     | '/login'
+    | '/messages'
     | '/pricing'
     | '/privacy'
     | '/profile'
@@ -152,6 +164,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   DiscoverRoute: typeof DiscoverRoute
   LoginRoute: typeof LoginRoute
+  MessagesRoute: typeof MessagesRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
@@ -197,6 +210,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -240,6 +260,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   DiscoverRoute: DiscoverRoute,
   LoginRoute: LoginRoute,
+  MessagesRoute: MessagesRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,

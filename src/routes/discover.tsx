@@ -123,6 +123,7 @@ function Discover() {
             <Link to="/pricing" className="inline-flex items-center gap-1.5 rounded-full glass px-3 py-1.5 text-xs font-bold hover:border-primary/50 transition">
               {isPremium ? <><Crown className="h-3.5 w-3.5 text-primary" /> Premium</> : <><Sparkles className="h-3.5 w-3.5 text-primary" /> {wallet?.chats_balance ?? 0} chats</>}
             </Link>
+            <Link to="/messages" className="rounded-xl border border-border p-2 hover:bg-card transition" title="Messages"><MessageCircle className="h-4 w-4" /></Link>
             {isAdmin && <Link to="/admin" className="rounded-xl border border-border p-2 hover:bg-card transition" title="Admin"><Shield className="h-4 w-4 text-primary" /></Link>}
             <Link to="/profile" className="rounded-xl border border-border p-2 hover:bg-card transition"><UserIcon className="h-4 w-4" /></Link>
             <button onClick={() => { signOut().then(() => nav({ to: "/" })); }}
