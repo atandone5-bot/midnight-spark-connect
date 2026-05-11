@@ -24,6 +24,11 @@ function AdminPage() {
   const [users, setUsers] = useState<Row[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
+  const [tab, setTab] = useState<"stats" | "users" | "messages">("stats");
+  const [convos, setConvos] = useState<Array<{ id: string; a: { id: string; nickname: string }; b: { id: string; nickname: string }; last_message_at: string }>>([]);
+  const [activeConvo, setActiveConvo] = useState<string | null>(null);
+  const [convoMsgs, setConvoMsgs] = useState<Array<{ id: string; sender_id: string; body: string; created_at: string }>>([]);
+  const [loadingConvos, setLoadingConvos] = useState(false);
 
   const fetchStats = useServerFn(getAdminStats);
   const fetchUsers = useServerFn(getAdminUsers);
