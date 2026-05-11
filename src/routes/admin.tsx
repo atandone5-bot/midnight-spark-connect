@@ -195,6 +195,44 @@ function AdminPage() {
             </table>
           </div>
         </section>
+        )}
+
+        {tab === "messages" && (
+        <section className="glass rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+            <h2 className="font-semibold">Conversations</h2>
+            <button onClick={loadConvos} disabled={loadingConvos} className="text-xs glass rounded-full px-3 py-1.5 font-semibold disabled:opacity-50">
+              {loadingConvos ? "Loading…" : "Reload"}
+            </button>
+          </div>
+          <div className="grid md:grid-cols-[280px_1fr] gap-4">
+            <div className="rounded-xl border border-border max-h-[60vh] overflow-y-auto divide-y divide-border/60">
+              {convos.length === 0 && <p className="text-xs text-muted-foreground p-4 text-center">No conversations.</p>}
+              {convos.map(c => (
+                <button key={c.id} onClick={() => openConvo(c.id)}
+                  className={`w-full text-left p-3 hover:bg-card transition ${activeConvo === c.id ? "bg-card" : ""}`}>
+                  <div className="text-xs font-semibold truncate">{c.a.nickname} ↔ {c.b.nickname}</div>
+                  <div className="text-[10px] text-muted-foreground">{new Date(c.last_message_at).toLocaleString()}</div>
+                </button>
+              ))}
+            </div>
+            <div className="rounded-xl border border-border min-h-[40vh] max-h-[60vh] overflow-y-auto p-3 space-y-2">
+              {!activeConvo && <p className="text-xs text-muted-foreground text-center pt-8">Select a conversation to read messages.</p>}
+              {activeConvo && convoMsgs.length === 0 && <p className="text-xs text-muted-foreground text-center pt-8">No messages.</p>}
+              {convoMsgs.map(m => {
+                const convo = convos.find(c => c.id === activeConvo);
+                const senderName = convo?.a.id === m.sender_id ? convo.a.nickname : convo?.b.nickname ?? "?";
+                return (
+                  <div key={m.id} className="text-sm">
+                    <div className="text-[10px] text-muted-foreground"><span className="font-semibold">{senderName}</span> · {new Date(m.created_at).toLocaleString()}</div>
+                    <div className="rounded-lg bg-card px-3 py-2 mt-0.5 whitespace-pre-wrap break-words">{m.body}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+        )}
       </main>
     </div>
   );
