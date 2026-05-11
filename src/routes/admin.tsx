@@ -133,7 +133,9 @@ function AdminPage() {
           <Stat icon={<ImageIcon className="h-4 w-4 text-destructive" />} label="Photos rejected" value={stats?.photos_rejected ?? 0} />
           <Stat icon={<Ban className="h-4 w-4 text-destructive" />} label="Suspended" value={stats?.suspended ?? 0} />
         </section>
+        )}
 
+        {tab === "users" && (
         <section className="glass rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
             <h2 className="font-semibold">Recent users</h2>
